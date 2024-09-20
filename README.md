@@ -28,6 +28,15 @@ A simple example of implementing event sourcing in TypeScript using Node.js. Thi
    }
    ```
 
+5. Create a `jest.config.js` file:
+   ```javascript
+   module.exports = {
+     preset: 'ts-jest',
+     testEnvironment: 'node',
+     testMatch: ['**/?(*.)+(spec|test).[tj]s?(x)'],
+   };
+   ```
+
 ### Step 1: Define the Events
 
 Create a folder `src/` and add the following files.
@@ -215,6 +224,58 @@ Reconstructed order state: {
   createdAt: '2024-09-20T12:34:56.789Z'
 }
 ```
+
+### Running Unit Tests
+
+To ensure that your implementation works correctly, you can write and run unit tests using Jest.
+
+* Install Jest and its TypeScript support:
+    ```bash
+    npm install --save-dev jest ts-jest @types/jest
+    ```
+
+* Add a test script to your `package.json`:
+    ```json
+    "scripts": {
+      "test": "jest"
+    }
+    ```
+
+* Create a test file `src/orderAggregate.test.ts`:
+    ```typescript
+    import { EventStore } from "./eventStore";
+    import { OrderAggregate } from "./orderAggregate";
+
+    test("should place an order and add items", () => {
+      const eventStore = new EventStore();
+      const orderAggregate = new OrderAggregate(eventStore);
+
+      const orderId = "order-123";
+      orderAggregate.placeOrder(orderId, "customer-456");
+      orderAggregate.addItem(orderId, "item-789", 2);
+      orderAggregate.addItem(orderId, "item-101", 5);
+
+      orderAggregate.rebuildState(orderId);
+      const orderState = orderAggregate.getState();
+
+      expect(orderState).toEqual({
+         orderId: "order-123",
+         customerId: "customer-456",
+         items: [
+            { itemId: "item-789", quantity: 2 },
+            { itemId: "item-101", quantity: 5 },
+         ],
+         createdAt: expect.any(Date),
+      });
+    });
+    ```
+
+* Run the tests:
+    ```bash
+    npm test
+    ```
+
+You should see output indicating that your tests have passed.
 
 ### Summary
 This code demonstrates how event sourcing works with a simple order system, where we:
